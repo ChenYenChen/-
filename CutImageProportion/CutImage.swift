@@ -23,8 +23,8 @@ class CutImage: UIViewController {
     private var centerView: UIView!
     private var finalButton: UIButton!
     private var canelButton: UIButton!
-    private var isFirst: Bool = true
     fileprivate var newHeight: CGFloat = 0
+    var proportion: CGFloat = (9 / 16)
     var cutDelegate: CutImageDelegate?
     var originalImage: UIImage?
     
@@ -40,10 +40,14 @@ class CutImage: UIViewController {
         self.scrollView.showsHorizontalScrollIndicator = false
         self.scrollView.delegate = self
         self.view.addSubview(self.scrollView)
+        
+        let cutHeight: CGFloat = self.width * self.proportion
+        let coverHeight: CGFloat = (self.height - cutHeight) / 2
+        self.scrollView.contentInset = UIEdgeInsets(top: coverHeight, left: 0, bottom: coverHeight, right: 0)
     }
     
     private func buildCover() {
-        let cutHeight: CGFloat = self.width / 16 * 9
+        let cutHeight: CGFloat = self.width * self.proportion
         let coverHeight: CGFloat = (self.height - cutHeight) / 2
         let topView: UIView = UIView(frame: CGRect(x: 0, y: 0, width: width, height: coverHeight))
         topView.backgroundColor = UIColor(colorLiteralRed: 0, green: 0, blue: 0, alpha: 0.4)
@@ -60,6 +64,7 @@ class CutImage: UIViewController {
         bottomView.backgroundColor = UIColor(colorLiteralRed: 0, green: 0, blue: 0, alpha: 0.4)
         bottomView.isUserInteractionEnabled = false
         self.view.addSubview(bottomView)
+        
     }
     
     private func buildToolBar() {
@@ -90,13 +95,24 @@ class CutImage: UIViewController {
         let scale: CGFloat = self.width / getImage.size.width
         self.newHeight = getImage.size.height * scale
         
+        self.originalImage = self.originImage(getImage, scaleSize: CGSize(width: self.width, height: self.newHeight))
         self.imageView.frame = CGRect(x: 0, y: 0, width: self.width, height: newHeight)
         
         self.imageView.image = self.originalImage
         self.scrollView.contentSize = CGSize(width: self.width, height: newHeight)
         
-        let coverHeight: CGFloat = (self.height - newHeight) / 2
-        self.scrollView.contentInset = UIEdgeInsets(top: coverHeight, left: 0, bottom: coverHeight, right: 0)
+//        let coverHeight: CGFloat = (self.height - newHeight) / 2
+//        self.scrollView.contentInset = UIEdgeInsets(top: coverHeight, left: 0, bottom: coverHeight, right: 0)
+    }
+    
+    private func originImage(_ image: UIImage, scaleSize size: CGSize) -> UIImage {
+        UIGraphicsBeginImageContext(size)
+        UIGraphicsBeginImageContextWithOptions(size, false, UIScreen.main.scale)
+        
+        image.draw(in: CGRect(x: 0, y: 0, width: size.width, height: size.height))
+        let scaleImage = UIGraphicsGetImageFromCurrentImageContext()!
+        UIGraphicsEndImageContext()
+        return scaleImage
     }
     
     @objc private func cutImage() {
@@ -108,21 +124,23 @@ class CutImage: UIViewController {
     private func croppedImage(image: UIImage, frame: CGRect) -> UIImage {
         let sourceImage: CGImage = image.cgImage!
         let newImage: CGImage = sourceImage.cropping(to: frame)!
-        return UIImage(cgImage: newImage)
+        let endImage = UIImage(cgImage: newImage)
+        return endImage
     }
     
     private func cutFrame() -> CGRect {
+        
         let imageSize = self.imageView.image!.size
         let contentSize = self.scrollView.contentSize
         let cropBoxFrame = self.centerView.frame
         let contentOffset = self.scrollView.contentOffset
         let edgeInsets = self.scrollView.contentInset
-        
+        let scale = imageView.frame.width / self.originalImage!.size.width
         var frame = CGRect.zero
         frame.origin.x = (contentOffset.x + edgeInsets.left) * (imageSize.width / contentSize.width)
         frame.origin.y = (contentOffset.y + edgeInsets.top) * (imageSize.height / contentSize.height)
-        frame.size.width = cropBoxFrame.size.width * (imageSize.width / contentSize.width)
-        frame.size.height = cropBoxFrame.size.height * (imageSize.height / contentSize.height)
+        frame.size.width = cropBoxFrame.size.width * (imageSize.width / contentSize.width) * scale
+        frame.size.height = cropBoxFrame.size.height * (imageSize.height / contentSize.height) * scale
         
         return frame
     }
@@ -172,17 +190,17 @@ extension CutImage: UIScrollViewDelegate {
         return self.imageView
     }
     
-    func scrollViewDidEndZooming(_ scrollView: UIScrollView, with view: UIView?, atScale scale: CGFloat) {
-        
-        let cutHeight: CGFloat = self.width / 16 * 9
-        let coverHeight: CGFloat = (self.height - cutHeight) / 2
-        var endHeight: CGFloat = 0
-        if scrollView.contentSize.height > coverHeight {
-            endHeight = coverHeight
-        } else {
-            endHeight = (self.height - newHeight) / 2
-        }
-        
-        self.scrollView.contentInset = UIEdgeInsets(top: endHeight, left: 0, bottom: endHeight, right: 0)
-    }
+//    func scrollViewDidEndZooming(_ scrollView: UIScrollView, with view: UIView?, atScale scale: CGFloat) {
+//        
+//        let cutHeight: CGFloat = self.width / 16 * 9
+//        let coverHeight: CGFloat = (self.height - cutHeight) / 2
+//        var endHeight: CGFloat = 0
+//        if scrollView.contentSize.height > coverHeight {
+//            endHeight = coverHeight
+//        } else {
+//            endHeight = (self.height - newHeight) / 2
+//        }
+//        
+//        self.scrollView.contentInset = UIEdgeInsets(top: endHeight, left: 0, bottom: endHeight, right: 0)
+//    }
 }
