@@ -1,15 +1,26 @@
-# CutImageWithProportion
+# 自訂圖片裁切比例
 Swift 3 自訂圖片裁切比例
 
 - 從相簿取得圖片後
 ```
 //取得圖片 - 從相簿取得圖片
-let originalImage: UIImage = infos.object(forKey: UIImagePickerControllerOriginalImage) as! UIImage
-let cut = CutImage()
-cut.proportion = 9 / 16 // 裁切比例
-cut.cutDelegate = self
-cut.originalImage = originalImage  // 圖片
-picker.pushViewController(cut, animated: true)
+//MARK: - 取得圖片
+extension ViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
+        let infos: NSDictionary = info as NSDictionary
+
+        //取得圖片 - 原圖
+        let originalImage: UIImage = infos.object(forKey: UIImagePickerControllerOriginalImage) as! UIImage
+        let cut = CutImage()
+        // 裁切比例
+        cut.proportion = 9 / 16
+        cut.cutDelegate = self
+        // 圖片
+        cut.originalImage = originalImage
+        picker.pushViewController(cut, animated: true)
+    }
+}
 ```
 - 取得裁切結束後的照片
 ```
