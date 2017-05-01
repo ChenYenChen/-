@@ -9,7 +9,7 @@
 import UIKit
 
 protocol CutImageDelegate {
-    func didGetImage(_ image: UIImage)
+    func didGetImage(_ cut: CutImage, image: UIImage)
 }
 
 class CutImage: UIViewController {
@@ -20,10 +20,9 @@ class CutImage: UIViewController {
     
     fileprivate var scrollView: UIScrollView!
     fileprivate var imageView: UIImageView!
-    private var centerView: UIView!
+    fileprivate var centerView: UIView!
     private var finalButton: UIButton!
     private var canelButton: UIButton!
-    fileprivate var newHeight: CGFloat = 0
     var proportion: CGFloat = (9 / 16)
     var cutDelegate: CutImageDelegate?
     var originalImage: UIImage?
@@ -31,7 +30,7 @@ class CutImage: UIViewController {
     // 建立ScrollView
     private func buildScroll() {
         
-        self.scrollView = UIScrollView(frame: CGRect(x: 0, y: 0, width: width, height: height))
+        self.scrollView = UIScrollView(frame: CGRect(x: 0, y: 0, width: self.width, height: self.height))
         self.scrollView.maximumZoomScale = 3.0
         self.scrollView.minimumZoomScale = 1.0
         self.scrollView.backgroundColor = UIColor.clear
@@ -39,12 +38,9 @@ class CutImage: UIViewController {
         self.scrollView.addSubview(self.imageView)
         self.scrollView.showsVerticalScrollIndicator = false
         self.scrollView.showsHorizontalScrollIndicator = false
+        
         self.scrollView.delegate = self
         self.view.addSubview(self.scrollView)
-        
-        let cutHeight: CGFloat = self.width * self.proportion
-        let coverHeight: CGFloat = (self.height - cutHeight) / 2
-        self.scrollView.contentInset = UIEdgeInsets(top: coverHeight, left: 0, bottom: coverHeight, right: 0)
     }
     // 建立遮罩
     private func buildCover() {
@@ -95,15 +91,34 @@ class CutImage: UIViewController {
         }
         
         let scale: CGFloat = self.width / getImage.size.width
-        self.newHeight = getImage.size.height * scale
+        let newHeight = getImage.size.height * scale
         
-        self.originalImage = self.originImage(getImage, scaleSize: CGSize(width: self.width, height: self.newHeight))
         self.imageView.frame = CGRect(x: 0, y: 0, width: self.width, height: newHeight)
         
-        self.imageView.image = self.originalImage
+        self.imageView.image = getImage
         self.scrollView.contentSize = CGSize(width: self.width, height: newHeight)
         
+        self.imageOffect(self.scrollView)
+        
+        if newHeight > self.centerView.bounds.height {
+            let pointY: CGFloat = ((newHeight - self.centerView.bounds.height) / 2) - self.scrollView.contentInset.top
+            self.scrollView.contentOffset = CGPoint(x: 0, y: pointY)
+        }
     }
+    // 圖片位置
+    fileprivate func imageOffect(_ scrollView: UIScrollView) {
+        
+        if scrollView.contentSize.height > self.centerView.bounds.height {
+            // 圖片高度大於遮罩
+            let coverHeight: CGFloat = (self.height - self.centerView.bounds.height) / 2
+            self.scrollView.contentInset = UIEdgeInsets(top: coverHeight, left: 0, bottom: coverHeight, right: 0)
+        } else {
+            // 圖片高度小於遮罩
+            let coverHeight: CGFloat = (self.height - scrollView.contentSize.height) / 2
+            self.scrollView.contentInset = UIEdgeInsets(top: coverHeight, left: 0, bottom: coverHeight, right: 0)
+        }
+    }
+    
     // 圖片縮放
     private func originImage(_ image: UIImage, scaleSize size: CGSize) -> UIImage {
         UIGraphicsBeginImageContext(size)
@@ -120,16 +135,13 @@ class CutImage: UIViewController {
             return
         }
         let newImage = self.croppedImage(image: getimage, frame: cutFrame())
-        self.cutDelegate?.didGetImage(newImage)
-        self.backView()
+        self.cutDelegate?.didGetImage(self, image: newImage)
     }
     // 裁減圖片
     private func croppedImage(image: UIImage, frame: CGRect) -> UIImage {
-        let scaleImage = self.originImage(image, scaleSize: frame.size)
-        let sourceImage: CGImage = scaleImage.cgImage!
-        print("size = \(scaleImage.size)")
+        let sourceImage: CGImage = image.cgImage!
         let newImage: CGImage = sourceImage.cropping(to: frame)!
-        let endImage = UIImage(cgImage: newImage)
+        let endImage: UIImage = UIImage(cgImage: newImage)
         return endImage
     }
     // 裁切範圍
@@ -157,10 +169,15 @@ class CutImage: UIViewController {
             na.isNavigationBarHidden = true
         }
         
+        
         self.buildScroll()
         self.buildCover()
         self.buildToolBar()
         self.buildImage()
+    }
+    // 隱藏狀態欄
+    override var prefersStatusBarHidden: Bool {
+        return true
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -193,5 +210,8 @@ class CutImage: UIViewController {
 extension CutImage: UIScrollViewDelegate {
     func viewForZooming(in scrollView: UIScrollView) -> UIView? {
         return self.imageView
+    }
+    func scrollViewDidZoom(_ scrollView: UIScrollView) {
+        self.imageOffect(scrollView)
     }
 }
