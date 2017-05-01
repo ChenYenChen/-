@@ -23,7 +23,7 @@ class CutImage: UIViewController {
     fileprivate var centerView: UIView!
     private var finalButton: UIButton!
     private var canelButton: UIButton!
-    var proportion: CGFloat = (9 / 16)
+    var proportion: Float = 9 / 16
     var cutDelegate: CutImageDelegate?
     var originalImage: UIImage?
     
@@ -44,7 +44,7 @@ class CutImage: UIViewController {
     }
     // 建立遮罩
     private func buildCover() {
-        let cutHeight: CGFloat = self.width * self.proportion
+        let cutHeight: CGFloat = self.width * CGFloat(self.proportion)
         let coverHeight: CGFloat = (self.height - cutHeight) / 2
         // 上遮罩
         let topView: UIView = UIView(frame: CGRect(x: 0, y: 0, width: width, height: coverHeight))
@@ -169,6 +169,12 @@ class CutImage: UIViewController {
             na.isNavigationBarHidden = true
         }
         
+        let maxProportion: Float = Float(self.height / self.width)
+        
+        if self.proportion > maxProportion {
+            print("超過螢幕的最大寬高比 需重新設定")
+            self.proportion = maxProportion
+        }
         
         self.buildScroll()
         self.buildCover()
