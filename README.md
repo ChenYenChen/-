@@ -2,7 +2,7 @@
 Swift 3 自訂圖片裁切比例
 
 - 從相簿取得圖片後
-![img]
+![img](https://github.com/ChenYenChen/CutImageWithProportion/blob/master/GifImage.gif)
 ```
 //取得圖片 - 從相簿取得圖片
 //MARK: - 取得圖片
